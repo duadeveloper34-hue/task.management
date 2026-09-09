@@ -20,10 +20,19 @@ const TaskCard = ({ task }) => {
 
       <div className="flex flex-wrap items-center gap-3">
         <button
-          className=" cursor-pointer rounded-lg bg-[#F5B942] px-4 py-2 font-medium text-[#0F1115] transition hover:bg-[#D99A20]"
-          onClick={() => toggleTaskComplete(task.id)}
+          type="button"
+          onClick={() => {
+            console.log("Clicked:", task.id);
+            console.log("Before:", task.complete);
+
+            toggleTaskComplete(task.id);
+          }}
+          className={`cursor-pointer rounded-lg px-4 py-2 font-medium transition ${task.complete
+              ? "bg-green-500 text-white"
+              : "bg-yellow-400 text-black"
+            }`}
         >
-          Complete
+          {task.complete ? "Completed" : "Complete"}
         </button>
 
         <button
