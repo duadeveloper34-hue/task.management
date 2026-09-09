@@ -1,91 +1,115 @@
 import { createContext, useEffect, useState } from "react";
+import api from "../api/Api";
 
 const TaskContext = createContext();
 
 export const TaskProvider = ({ children }) => {
-  const [tasks, setTasks] = useState(() => {
-    const savedTasks = localStorage.getItem("tasks");
-
-    return savedTasks
-      ? JSON.parse(savedTasks)
-      : [
-          {
-            id: 1,
-            title: "Task 1",
-            description:
-              "Learn React fundamentals and practice components.",
-            complete: false,
-          },
-          {
-            id: 2,
-            title: "Task 2",
-            description:
-              "Practice React Hook Form and form validation.",
-            complete: false,
-          },
-          {
-            id: 3,
-            title: "Task 3",
-            description:
-              "Build a small project using Context API.",
-            complete: true,
-          },
-          {
-            id: 4,
-            title: "Task 4",
-            description:
-              "Practice CRUD operations in React.",
-            complete: false,
-          },
-          {
-            id: 5,
-            title: "Task 5",
-            description:
-              "Learn how to use Motion for animations.",
-            complete: true,
-          },
-        ]
-  });
+  const [tasks, setTasks] = useState([]);
 
   const [filter, setFilter] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
 
-  // Save tasks to localStorage
   useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
+    let ignore = false;
 
-  // CREATE
-  const addTask = (task) => {
-    setTasks((prevTasks) => [...prevTasks, task]);
+    const loadTasks = async () => {
+      try {
+        const response = await api.get("/notes");
+
+        console.log(response.data);
+
+        if (!ignore) {
+          setTasks(response.data.notes);
+        }
+      } catch (error) {
+        console.log("Error fetching tasks:", error);
+      }
+    };
+
+    loadTasks();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  // CREATE TASK
+ const addTask = async (task) => {
+  try {
+    console.log("TASK BEING SENT:", task);
+
+    const response = await api.post("/notes", task);
+
+    console.log("POST RESPONSE:", response.data);
+
+    setTasks((prevTasks) => [
+      ...prevTasks,
+      response.data,
+    ]);
+  } catch (error) {
+    console.log("POST ERROR:", error.response?.data);
+  }
+};
+
+  // DELETE TASK
+  const removeTask = async (id) => {
+    try {
+      await api.delete(`/notes/${id}`);
+
+      setTasks((prevTasks) =>
+        prevTasks.filter((task) => task.id !== id)
+      );
+    } catch (error) {
+      console.log("Error deleting task:", error);
+    }
   };
 
-  // DELETE
-  const removeTask = (id) => {
-    setTasks((prevTasks) =>
-      prevTasks.filter((task) => task.id !== id)
-    );
-  };
+  // UPDATE TASK
+  const updateTask = async (updatedTask) => {
+    try {
+      const response = await api.put(
+        `/notes/${updatedTask.id}`,
+        updatedTask
+      );
 
-  // UPDATE
-  const updateTask = (updatedTask) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === updatedTask.id ? updatedTask : task
-      )
-    );
+      console.log("PUT response:", response.data);
+
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === updatedTask.id
+            ? response.data
+            : task
+        )
+      );
+    } catch (error) {
+      console.log("Error updating task:", error);
+    }
   };
 
   // COMPLETE / UNCOMPLETE
-  const toggleTaskComplete = (id) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === id
-          ? { ...task, complete: !task.complete }
-          : task
-      )
-    );
+  const toggleTaskComplete = async (id) => {
+    try {
+      const task = tasks.find((task) => task.id === id);
+
+      const updatedTask = {
+        ...task,
+        complete: !task.complete,
+      };
+
+      const response = await api.put(
+        `/notes/${id}`,
+        updatedTask
+      );
+
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === id ? response.data : task
+        )
+      );
+    } catch (error) {
+      console.log("Error toggling task:", error);
+    }
   };
 
   return (
@@ -96,12 +120,15 @@ export const TaskProvider = ({ children }) => {
         removeTask,
         updateTask,
         toggleTaskComplete,
+
         filter,
         setFilter,
+
         isModalOpen,
         setIsModalOpen,
-        setEditingTask,
+
         editingTask,
+        setEditingTask,
       }}
     >
       {children}
