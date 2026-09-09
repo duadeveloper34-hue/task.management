@@ -3,8 +3,6 @@ import { useContext, useEffect } from "react";
 import { TaskContext } from "../context/TaskContext";
 import toast from "react-hot-toast";
 
-let nextTaskId = 0;
-
 const TaskForm = () => {
   const {
     addTask,
@@ -35,25 +33,23 @@ const TaskForm = () => {
 
   const onSubmit = (data) => {
     if (editingTask) {
-  const updatedTask = {
-    ...editingTask,
-    title: data.taskName,
-    description: data.taskDescription,
-  };
+      const updatedTask = {
+        ...editingTask,
+        title: data.taskName,
+        description: data.taskDescription,
+      };
 
-  updateTask(updatedTask);
-  toast.success("Task updated successfully!");
-} else {
-  const newTask = {
-    id: nextTaskId++,
-    title: data.taskName,
-    description: data.taskDescription,
-    complete: false,
-  };
+      updateTask(updatedTask);
+      toast.success("Task updated successfully!");
+    } else {
+      const newTask = {
+        title: data.taskName,
+        description: data.taskDescription,
+      };
 
-  addTask(newTask);
-  toast.success("Task added successfully!");
-}
+      addTask(newTask);
+      toast.success("Task added successfully!");
+    }
 
     reset();
     setEditingTask(null);
@@ -78,6 +74,7 @@ const TaskForm = () => {
           type="text"
           id="taskName"
           placeholder="Enter task name"
+          required
           {...register("taskName")}
           className="w-full rounded-lg border border-[#2A2F38] bg-[#0F1115] px-4 py-3 text-[#F5F5F5] outline-none transition placeholder:text-[#6B7280] focus:border-[#F5B942] focus:ring-1 focus:ring-[#F5B942]"
         />
@@ -93,10 +90,14 @@ const TaskForm = () => {
         </label>
 
         <textarea
+          type="text"
           id="taskDescription"
           rows="4"
           placeholder="Enter task description"
-          {...register("taskDescription")}
+          {...register("taskDescription", {
+            required: "Please write a short message.",
+            minLength: { value: 10, message: "Please add a little more detail." },
+          })}
           className="w-full resize-none rounded-lg border border-[#2A2F38] bg-[#0F1115] px-4 py-3 text-[#F5F5F5] outline-none transition placeholder:text-[#6B7280] focus:border-[#F5B942] focus:ring-1 focus:ring-[#F5B942]"
         />
       </div>
